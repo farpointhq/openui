@@ -8,7 +8,7 @@ import {
 import { resolveShouldFitLegend } from "../../utils/resolveShouldFitLegend";
 import { getWidthOfData, getWidthOfGroup } from "../../utils/scrollUtils";
 import { MAX_X_AXIS_HEIGHT_SHARE } from "../../utils/xAxisLabelLayout";
-import type { StackOffset } from "../../utils/yDomain";
+import type { StackGroups, StackOffset } from "../../utils/yDomain";
 import { useContainerSize } from "../core/useContainerSize";
 import { useLegendHeight } from "../core/useLegendHeight";
 import { useXAxisLabelLayout } from "./useXAxisLabelLayout";
@@ -40,6 +40,8 @@ export interface UseChartDimensionsParams<T extends ChartData> {
   stacked?: boolean;
   /** How stacked series combine (see `StackOffset`). */
   stackOffset?: StackOffset;
+  /** Per-series stack ids of a grouped bar chart (see `StackGroups`). */
+  stackGroups?: StackGroups;
   /**
    * Y-tick-count hint (the chart's `yTickCount` prop). Threaded into the
    * y-axis width measurement so the measured tick strings are the RENDERED
@@ -75,6 +77,7 @@ export function useChartDimensions<T extends ChartData>({
   density,
   stacked = false,
   stackOffset,
+  stackGroups,
   yTickCount,
   labelShare,
 }: UseChartDimensionsParams<T>) {
@@ -92,6 +95,7 @@ export function useChartDimensions<T extends ChartData>({
     tickCount: yTickCount,
     scopeRef: containerRef,
     stackOffset,
+    stackGroups,
   });
   const effectiveYAxisWidth = showYAxis ? yAxisWidth : 0;
   // Clamped: before the container is measured (SSR + first client render)

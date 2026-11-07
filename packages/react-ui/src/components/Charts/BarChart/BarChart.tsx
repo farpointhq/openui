@@ -51,6 +51,7 @@ function BarChartImpl<T extends BarChartData>({
   categoryKey,
   customPalette,
   variant = "grouped",
+  stackGroups,
   tickVariant: tickVariantProp,
   barRadius = 4,
   maxBarWidth,
@@ -93,6 +94,7 @@ function BarChartImpl<T extends BarChartData>({
     onClick,
     density,
     stacked: variant === "stacked",
+    stackGroups: variant === "grouped" ? stackGroups : undefined,
     yTickCount,
     // Labels are drawn under the bar's band, not across the whole category.
     labelShare: 1 - BAND_PADDING_INNER,
@@ -101,7 +103,15 @@ function BarChartImpl<T extends BarChartData>({
   const isStacked = variant === "stacked";
   const xScale = useXBandScale(data, orch.data.catKey, orch.dimensions.chartAreaWidth);
   const stackedData = useStackedData(data, orch.data.dataKeys, isStacked);
-  const yScale = useYScale(data, orch.data.dataKeys, orch.dimensions.chartInnerHeight, isStacked);
+  const groups = isStacked ? undefined : stackGroups;
+  const yScale = useYScale(
+    data,
+    orch.data.dataKeys,
+    orch.dimensions.chartInnerHeight,
+    isStacked,
+    "sign",
+    groups,
+  );
 
   const findIndex = useCallback((mouseX: number) => findBandIndex(xScale, mouseX), [xScale]);
   const mouseHandlers = orch.hover.createMouseHandlers(findIndex);
@@ -160,6 +170,7 @@ function BarChartImpl<T extends BarChartData>({
             xScale={xScale}
             yScale={yScale}
             variant={variant}
+            stackGroups={groups}
             stackedData={stackedData}
             categoryKey={orch.data.catKey}
             colors={orch.data.colorMap}

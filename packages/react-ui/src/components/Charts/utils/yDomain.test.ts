@@ -1,7 +1,7 @@
 import { stack, stackOffsetNone, stackOrderNone } from "d3-shape";
 import { describe, expect, it } from "vitest";
 import { stackOffsetDivergingZeroPreserving } from "../hooks/cartesian/useStackedData";
-import { computeYDomain } from "./yDomain";
+import { computeYDomain, stackSlots } from "./yDomain";
 
 const mixed = [
   { m: "Jan", a: 40, b: -25, c: 10 },
@@ -131,5 +131,45 @@ describe("stackOffsetDivergingZeroPreserving (the rendered stack offset)", () =>
     const data = [{ m: "Jan", a: 10, b: 0, c: -5 }];
     const [, b] = runStack(data, stackOffsetDivergingZeroPreserving, ["a", "b", "c"]);
     expect(b![0]).toEqual([10, 10]);
+  });
+});
+
+describe("stack groups (grouped bars that stack some series)", () => {
+  const installs = [
+    { day: "Apr 17", desktop: 446, android: 86, ios: 360 },
+    { day: "Apr 18", desktop: 364, android: 46, ios: 410 },
+  ];
+  const keys = ["desktop", "android", "ios"];
+  const mobile = { android: "mobile", ios: "mobile" };
+
+  it("stackSlots keeps lone series apart and groups the rest, in first-seen order", () => {
+    expect(stackSlots(keys, mobile)).toEqual([
+      { id: "series:desktop", keys: ["desktop"] },
+      { id: "stack:mobile", keys: ["android", "ios"] },
+    ]);
+    // No groups: one slot per series, the plain grouped chart.
+    expect(stackSlots(keys).map((s) => s.keys)).toEqual([["desktop"], ["android"], ["ios"]]);
+    // A stack id equal to a series key does not merge with that series.
+    expect(stackSlots(["a", "b"], { b: "a" }).map((s) => s.keys)).toEqual([["a"], ["b"]]);
+  });
+
+  it("the domain covers the tallest slot: a stack's sum, or a lone series' value", () => {
+    // Apr 18 mobile stack = 456 > desktop 446.
+    expect(computeYDomain(installs, keys, false, "sign", mobile)).toEqual([0, 456]);
+    // Without the groups it is the plain grouped max.
+    expect(computeYDomain(installs, keys, false)).toEqual([0, 446]);
+  });
+
+  it("negative values in a stack stack down within their own slot", () => {
+    const data = [{ m: "Jan", a: 5, b: -4, c: -3 }];
+    expect(computeYDomain(data, ["a", "b", "c"], false, "sign", { b: "s", c: "s" })).toEqual([
+      -7, 5,
+    ]);
+  });
+
+  it("groups of one series change nothing", () => {
+    expect(computeYDomain(installs, keys, false, "sign", { desktop: "d" })).toEqual(
+      computeYDomain(installs, keys, false),
+    );
   });
 });

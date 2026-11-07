@@ -1,7 +1,7 @@
 import { scaleLinear } from "d3-scale";
 import React, { useMemo } from "react";
 import { measureYAxisWidth } from "../../utils/styleUtils";
-import { computeYDomain, type StackOffset } from "../../utils/yDomain";
+import { computeYDomain, type StackGroups, type StackOffset } from "../../utils/yDomain";
 import { useCanvasContextForLabelSize } from "../core/useCanvasContextForLabelSize";
 import { useHydrated } from "../core/useHydrated";
 
@@ -43,9 +43,11 @@ export const useYAxisWidth = (
     scopeRef?: React.RefObject<HTMLElement | null>;
     /** How stacked series combine — must match the rendered scale's. */
     stackOffset?: StackOffset;
+    /** Per-series stack ids of a grouped bar chart — must match the scale's. */
+    stackGroups?: StackGroups;
   },
 ) => {
-  const { tickCount, scopeRef, stackOffset = "sign" } = options ?? {};
+  const { tickCount, scopeRef, stackOffset = "sign", stackGroups } = options ?? {};
   const context = useCanvasContextForLabelSize(scopeRef);
   // Hydration gate (not a window check): the server renders the default
   // width, so the hydration render must too — measuring real text here
@@ -63,14 +65,14 @@ export const useYAxisWidth = (
     // can size before chart height is known (same trick the scatter chart uses).
     // The count mirrors resolveTickCount's override clamp (constants.ts).
     const scale = scaleLinear()
-      .domain(computeYDomain(data, dataKeys, stacked, stackOffset))
+      .domain(computeYDomain(data, dataKeys, stacked, stackOffset, stackGroups))
       .nice();
     const ticks =
       tickCount != null && Number.isFinite(tickCount)
         ? scale.ticks(Math.max(2, Math.floor(tickCount)))
         : scale.ticks();
     return measureYAxisWidth(ticks, context);
-  }, [hydrated, data, dataKeys, stacked, stackOffset, tickCount, context]);
+  }, [hydrated, data, dataKeys, stacked, stackOffset, stackGroups, tickCount, context]);
 
   return { yAxisWidth };
 };

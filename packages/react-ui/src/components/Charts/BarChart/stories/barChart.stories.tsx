@@ -963,6 +963,36 @@ export const SmallDataStory: Story = {
 };
 
 /**
+ * ## Stack groups
+ *
+ * `stackGroups` stacks some series and not others: Desktop keeps its own bar
+ * while Android and iOS share one stacked "mobile" bar in every category.
+ */
+export const StackGroupsStory: Story = {
+  name: "🧱 Stack Groups (Grouped + Stacked)",
+  args: {
+    data: [
+      { day: "Apr 17", Desktop: 446, Android: 86, iOS: 360 },
+      { day: "Apr 18", Desktop: 364, Android: 46, iOS: 410 },
+      { day: "Apr 19", Desktop: 243, Android: 63, iOS: 180 },
+      { day: "Apr 20", Desktop: 89, Android: 61, iOS: 150 },
+      { day: "Apr 21", Desktop: 137, Android: 63, iOS: 200 },
+    ] as any,
+    categoryKey: "day" as any,
+    variant: "grouped",
+    stackGroups: { Android: "mobile", iOS: "mobile" },
+    grid: true,
+    showYAxis: true,
+    legend: true,
+  },
+  render: (args: any) => (
+    <Card style={{ width: "480px" }}>
+      <BarChart {...args} />
+    </Card>
+  ),
+};
+
+/**
  * ## Large Dataset (With Scrolling)
  *
  * This story showcases the chart's horizontal scrolling capability.

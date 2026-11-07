@@ -1,4 +1,5 @@
 import type { BaseChartProps, ChartData } from "../types";
+import type { StackGroups } from "../utils/yDomain";
 
 export type BarChartData = ChartData;
 
@@ -8,6 +9,15 @@ export type BarChartOrientation = "vertical" | "horizontal";
 
 export interface BarChartProps<T extends BarChartData> extends BaseChartProps<T> {
   variant?: BarChartVariant;
+  /**
+   * Stack some series and not others (`variant: "grouped"`, vertical only).
+   * Maps a series key to a stack id: series sharing an id draw as one stacked
+   * bar, and a series without an id keeps its own bar beside them. For
+   * `{ android: "mobile", ios: "mobile" }`, `desktop` stands alone and
+   * `android` + `ios` stack. Ignored by `variant: "stacked"`, which stacks
+   * every series.
+   */
+  stackGroups?: StackGroups;
   /**
    * Bar orientation. `'vertical'` (default) renders upward bars per category;
    * `'horizontal'` renders labeled scrolling rows with bars growing rightward

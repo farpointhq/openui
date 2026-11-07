@@ -5,7 +5,9 @@ import type { StackedData } from "../../hooks";
 import { roundedBarPath } from "../../shared/cartesian/roundedBarPath";
 import { CHART_CLASS_PREFIX } from "../../utils/constants";
 import { entranceProps } from "../../utils/entranceUtils";
+import { stackSlots, type StackGroups } from "../../utils/yDomain";
 import type { BarChartVariant } from "../types";
+import { stackSegments } from "./stackGroupGeometry";
 import { verticalBarRadii } from "./verticalBarRadii";
 
 const DEFAULT_MAX_BAR_WIDTH = 16;
@@ -18,6 +20,8 @@ interface BarSeriesProps {
   xScale: ScaleBand<string>;
   yScale: ScaleLinear<number, number>;
   variant: BarChartVariant;
+  /** Grouped variant only: series sharing a stack id draw as one stacked bar. */
+  stackGroups?: StackGroups;
   stackedData: StackedData | null;
   categoryKey: string;
   colors: Record<string, string>;
@@ -45,6 +49,7 @@ export const BarSeries: React.FC<BarSeriesProps> = ({
   xScale,
   yScale,
   variant,
+  stackGroups,
   stackedData,
   categoryKey,
   colors,
@@ -57,10 +62,17 @@ export const BarSeries: React.FC<BarSeriesProps> = ({
 }) => {
   const bandwidth = xScale.bandwidth();
 
+  // Grouped: one inner band per slot — a lone series, or one stack group.
+  // Without stack groups every series is its own slot (the plain grouped chart).
+  const slots = useMemo(() => stackSlots(dataKeys, stackGroups), [dataKeys, stackGroups]);
+
   const innerScale = useMemo(() => {
     if (variant !== "grouped") return null;
-    return scaleBand<string>().domain(dataKeys).range([0, xScale.bandwidth()]).padding(0.05);
-  }, [variant, dataKeys, xScale]);
+    return scaleBand<string>()
+      .domain(slots.map((slot) => slot.id))
+      .range([0, xScale.bandwidth()])
+      .padding(0.05);
+  }, [variant, slots, xScale]);
 
   // For grouped: cap individual bar within its inner band
   // For stacked: cap the single bar within the full band
@@ -175,49 +187,66 @@ export const BarSeries: React.FC<BarSeriesProps> = ({
         const animatedSuffix = animatedClass ? ` ${animatedClass}` : "";
         return (
           <g key={category}>
-            {dataKeys.map((key) => {
-              const value = Number(row[key]) || 0;
-              const innerBandX = innerScale?.(key) ?? 0;
+            {slots.map((slot) => {
+              const innerBandX = innerScale?.(slot.id) ?? 0;
               const barX = groupX + innerBandX + (groupedBarLayout?.offset ?? 0);
-              // Bars grow from the zero line (== the chart bottom only while
-              // the domain has no negatives), downward for negative values.
-              const zeroY = yScale(0);
-              const valueY = yScale(value);
-              const barY = Math.min(valueY, zeroY);
-              const barHeight = Math.abs(valueY - zeroY);
-              const isNegative = value < 0;
               const barWidth = groupedBarLayout?.barWidth ?? innerScale?.bandwidth() ?? bandwidth;
-              const color = colors[key] ?? "#000";
+              // A lone series grows from the zero line; a stack group stacks
+              // its series the way `variant: "stacked"` does, in this slot only.
+              const segments =
+                slot.keys.length === 1
+                  ? (() => {
+                      const value = Number(row[slot.keys[0]!]) || 0;
+                      return [
+                        {
+                          key: slot.keys[0]!,
+                          y0: Math.min(0, value),
+                          y1: Math.max(0, value),
+                          isNegative: value < 0,
+                          isOutermost: true,
+                        },
+                      ];
+                    })()
+                  : stackSegments(row, slot.keys);
 
-              return (
-                <g key={key}>
-                  <path
-                    className={`${CHART_CLASS_PREFIX}-bar-chart-bar${isNegative ? ` ${CHART_CLASS_PREFIX}-bar-chart-bar--negative` : ""}${animatedSuffix}`}
-                    d={roundedBarPath(
-                      barX,
-                      barY,
-                      barWidth,
-                      barHeight,
-                      verticalBarRadii(barRadius, isNegative, true),
-                    )}
-                    fill={color}
-                    style={animationDelay ? { animationDelay } : undefined}
-                  />
-                  {internalLine && barHeight >= MIN_BAR_HEIGHT_FOR_LINE && barWidth >= 3 && (
-                    <line
-                      className={`${CHART_CLASS_PREFIX}-bar-chart-internal-line${isNegative ? ` ${CHART_CLASS_PREFIX}-bar-chart-bar--negative` : ""}${animatedSuffix}`}
-                      x1={barX + barWidth / 2}
-                      y1={barY + LINE_PADDING}
-                      x2={barX + barWidth / 2}
-                      y2={barY + barHeight - LINE_PADDING}
-                      stroke={internalLineColor}
-                      strokeWidth={internalLineWidth}
-                      strokeLinecap="round"
+              return segments.map((segment) => {
+                const top = yScale(segment.y1);
+                const bottom = yScale(segment.y0);
+                const barY = Math.min(top, bottom);
+                const barHeight = Math.abs(bottom - top);
+                const { isNegative } = segment;
+                const color = colors[segment.key] ?? "#000";
+
+                return (
+                  <g key={segment.key}>
+                    <path
+                      className={`${CHART_CLASS_PREFIX}-bar-chart-bar${isNegative ? ` ${CHART_CLASS_PREFIX}-bar-chart-bar--negative` : ""}${animatedSuffix}`}
+                      d={roundedBarPath(
+                        barX,
+                        barY,
+                        barWidth,
+                        barHeight,
+                        verticalBarRadii(barRadius, isNegative, segment.isOutermost),
+                      )}
+                      fill={color}
                       style={animationDelay ? { animationDelay } : undefined}
                     />
-                  )}
-                </g>
-              );
+                    {internalLine && barHeight >= MIN_BAR_HEIGHT_FOR_LINE && barWidth >= 3 && (
+                      <line
+                        className={`${CHART_CLASS_PREFIX}-bar-chart-internal-line${isNegative ? ` ${CHART_CLASS_PREFIX}-bar-chart-bar--negative` : ""}${animatedSuffix}`}
+                        x1={barX + barWidth / 2}
+                        y1={barY + LINE_PADDING}
+                        x2={barX + barWidth / 2}
+                        y2={barY + barHeight - LINE_PADDING}
+                        stroke={internalLineColor}
+                        strokeWidth={internalLineWidth}
+                        strokeLinecap="round"
+                        style={animationDelay ? { animationDelay } : undefined}
+                      />
+                    )}
+                  </g>
+                );
+              });
             })}
           </g>
         );

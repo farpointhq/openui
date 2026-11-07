@@ -10,7 +10,7 @@ import { useChartScroll } from "./useChartScroll";
 import type { ChartColorPalette } from "../../../ThemeProvider";
 import type { ChartData, XAxisTickVariant } from "../../types";
 import type { ChartDensity } from "../../utils/scrollUtils";
-import type { StackOffset } from "../../utils/yDomain";
+import type { StackGroups, StackOffset } from "../../utils/yDomain";
 import type { CartesianChartOrchestrator } from "./orchestratorTypes";
 
 export interface UseCartesianChartOrchestratorParams<T extends ChartData> {
@@ -34,6 +34,8 @@ export interface UseCartesianChartOrchestratorParams<T extends ChartData> {
   stacked?: boolean;
   /** How stacked series combine (see `StackOffset`). */
   stackOffset?: StackOffset;
+  /** Per-series stack ids of a grouped bar chart (see `StackGroups`). */
+  stackGroups?: StackGroups;
   /**
    * Y-tick-count hint. The chart also passes it to CartesianChartLayout for
    * YAxis/Grid rendering; here it makes the y-axis WIDTH measurement size the
@@ -73,6 +75,7 @@ export function useCartesianChartOrchestrator<T extends ChartData>({
   density,
   stacked,
   stackOffset,
+  stackGroups,
   yTickCount,
   labelShare,
 }: UseCartesianChartOrchestratorParams<T>): CartesianChartOrchestrator {
@@ -107,6 +110,7 @@ export function useCartesianChartOrchestrator<T extends ChartData>({
     density,
     stacked,
     stackOffset,
+    stackGroups,
     yTickCount,
     labelShare,
   });
