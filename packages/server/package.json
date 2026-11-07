@@ -91,7 +91,7 @@
   },
   "devDependencies": {
     "@langchain/core": "^1.2.3",
-    "@modelcontextprotocol/sdk": "^1.27.1",
+    "@modelcontextprotocol/sdk": "^1.32.0",
     "ai": "^7.0.10",
     "openai": "^7.20.0",
     "tsdown": "^0.21.7",

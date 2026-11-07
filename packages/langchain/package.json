@@ -95,6 +95,6 @@
     "@langchain/langgraph": "^1.4.5",
     "@langchain/protocol": "^0.0.18",
     "vitest": "^4.1.0",
-    "zod": "^4.2.0"
+    "zod": "^4.6.6"
   }
 }
