@@ -40,7 +40,7 @@
     "lucide-react": "^0.570.0",
     "mermaid": "^11.16.0",
     "motion": "^12.34.3",
-    "next": "16.2.6",
+    "next": "16.4.1",
     "next-themes": "^0.4.6",
     "octokit": "^5.0.0",
     "openai": "^6.22.0",
@@ -52,7 +52,7 @@
     "semver": "^7.8.5",
     "shaders": "^3.2.470",
     "tailwind-merge": "^3.4.1",
-    "zod": "^4.3.6",
+    "zod": "^4.6.6",
     "zustand": "4.5.7"
   },
   "devDependencies": {
